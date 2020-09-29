@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @author jamesostmann
  */
 public class ParentServer {
-    
+
     private ServerSocket server;
     private static final HashMap<String, Double> GPA_TABLE;
     private int numTeams;
@@ -31,93 +31,95 @@ public class ParentServer {
     private DataInputStream fromClient;
     private ChildTask[] childTasks;
     private Thread[] childThreads;
-    
-    
+
     public static void main(final String[] args) {
-        
+
         new ParentServer(8999);
     }
-    
+
     static {
         GPA_TABLE = new HashMap<>();
         initTable();
     }
 
     public ParentServer(int port) {
-        
+
         int cores = Runtime.getRuntime().availableProcessors();
         System.out.println("Starting server with " + cores + " cores....");
-        
+
         int currentTeam = 0;
 
         try {
             server = new ServerSocket(port);
-            
+
             Socket socket = server.accept();
             fromClient = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
             toClient = new DataOutputStream(socket.getOutputStream());
 
             String parentClientMessage = fromClient.readUTF();
-            
+
             numTeams = Integer.parseInt(parentClientMessage);
-            
+
             childTasks = new ChildTask[numTeams];
             childThreads = new Thread[numTeams];
-            
+
             System.out.println(parentClientMessage);
-            
-           
-            
+
             while (currentTeam < numTeams) {
-                
+
                 socket = server.accept();
                 InetAddress ip = socket.getInetAddress();
-                
+
                 System.out.println("Established connection with new Child client at " + ip.getHostAddress());
-                
+
                 childTasks[currentTeam] = new ChildTask(socket);
                 childThreads[currentTeam] = new Thread(childTasks[currentTeam]);
-                
+
                 childThreads[currentTeam].start();
-                
+
                 currentTeam++;
 
             }
-            
+
             joinChildServers();
-            
-            Arrays.sort(childTasks);
-            String result = "";
-            for(ChildTask t: childTasks) {
-                result += t.toString(); 
-            }
-            
-            toClient.writeUTF(result);
-            
-          
+
+            toClient.writeUTF(combineData());
+
         } catch (IOException ex) {
             Logger.getLogger(ParentServer.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
     
+    private String combineData() {
+        String result = String.format("%-15s%-20s%-20s\n","Team Name","Team Semester GPA","Team Cumulative GPA");
+        result += String.format("%-15s%-20s%-20s\n\n","---------","-----------------","-------------------");
+        Arrays.sort(childTasks);
+        
+        for (ChildTask t : childTasks) {
+            result += t.toString();
+        }
+        
+        return result;
+        
+    }
     private void joinChildServers() {
-    
+
         try {
-        
-            for(Thread child: childThreads) {
-                    
+
+            for (Thread child : childThreads) {
+
                 child.join();
-            
+
             }
-        
+
         } catch (InterruptedException ex) {
             Logger.getLogger(ParentServer.class.getName()).log(Level.SEVERE, null, ex);
         }
-    
+
     }
-    
+
     static void initTable() {
         GPA_TABLE.put("A", 4.0);
         GPA_TABLE.put("A-", 3.7);
@@ -131,7 +133,7 @@ public class ParentServer {
         GPA_TABLE.put("D", 1.0);
         GPA_TABLE.put("F", 0.0);
     }
-    
+
     private static String calculateGPA(String clientMessage) {
 
         String[] message = clientMessage.split(",");
@@ -150,12 +152,12 @@ public class ParentServer {
         double prevGPA = Double.parseDouble(message[i++]);
         int prevCreditHrs = Integer.parseInt(message[i]);
         double cumulativeGPA = ((prevGPA * prevCreditHrs) + semesterTotal) / (prevCreditHrs += semesterCredits);
-       
+
         return semesterGPA + "," + cumulativeGPA;
     }
-    
+
     private class ChildTask implements Runnable, Comparable<ChildTask> {
-        
+
         private Socket socket;
         private DataOutputStream toClient;
         private DataInputStream fromClient;
@@ -164,7 +166,7 @@ public class ParentServer {
         private double sumSemesterGPA;
         private double sumCumulativeGPA;
         private String teamName;
-        
+
         public ChildTask(Socket socket) {
             this.socket = socket;
             teamSemesterGPA = 0.0;
@@ -172,69 +174,66 @@ public class ParentServer {
             sumSemesterGPA = 0.0;
             sumCumulativeGPA = 0.0;
         }
-        
+
         public double getTeamSemesterGPA() {
             return teamSemesterGPA;
         }
-        
+
         public double getTeamCumulativeGpa() {
             return teamCumulativeGPA;
         }
-        
+
         @Override
         public int compareTo(ChildTask other) {
             return this.teamName.compareTo(other.teamName);
         }
-        
+
         @Override
         public String toString() {
             DecimalFormat df = new DecimalFormat("#.##");
-            return String.format("%-12s %-12s %-12s",teamName,df.format(teamSemesterGPA),df.format(teamCumulativeGPA)) + System.lineSeparator();
+            return String.format("%-15s%-20s%-20s", teamName, df.format(teamSemesterGPA), df.format(teamCumulativeGPA)) + System.lineSeparator();
         }
-        
+
         @Override
         public void run() {
 
             try {
-                
+
                 fromClient = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
                 toClient = new DataOutputStream(socket.getOutputStream());
 
                 teamName = fromClient.readUTF();
-                
+
                 System.out.println("Team: " + teamName);
-                
+
                 int numPlayers = Integer.parseInt(fromClient.readUTF());
-                
+
                 System.out.println("Num Players: " + numPlayers);
-                
-                
-                for(int i = 0; i < numPlayers; i++) {
-                    
+
+                for (int i = 0; i < numPlayers; i++) {
+
                     String playerGpa = fromClient.readUTF();
                     System.out.println("Player " + i + " " + teamName + " " + playerGpa);
                     String[] tempPlayerData = calculateGPA(playerGpa).split(",");
                     sumSemesterGPA += Double.parseDouble(tempPlayerData[0]);
                     sumCumulativeGPA += Double.parseDouble(tempPlayerData[1]);
-                    
+
                 }
-                
-                
-                teamSemesterGPA = sumSemesterGPA/ numPlayers;
+
+                teamSemesterGPA = sumSemesterGPA / numPlayers;
                 teamCumulativeGPA = sumCumulativeGPA / numPlayers;
-                
-                
+
                 socket.close();
                 toClient.close();
                 fromClient.close();
-                            
+
             } catch (IOException ex) {
                 Logger.getLogger(ChildTask.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
-         
+
     }
-    
+
 }

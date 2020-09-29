@@ -50,9 +50,7 @@ public class ParentClient {
             
             childTasks = new ClientChildTask[numTeams];
             childThreads = new Thread[numTeams];
-            
-            System.out.println("Sending num teams to server...");
-            
+                       
             toServer.writeUTF(String.valueOf(numTeams)); 
             
             while(input.hasNextLine()) {
