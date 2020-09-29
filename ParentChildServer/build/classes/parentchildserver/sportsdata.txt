@@ -1,0 +1,5 @@
+4
+Football,50
+Baseball,30
+Bowling,15
+Golf,12
