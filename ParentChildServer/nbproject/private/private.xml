@@ -3,10 +3,8 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/Users/jamesostmann/Desktop/COMP476/ParentChildServer/src/parentchildserver/Roster.java</file>
-            <file>file:/Users/jamesostmann/Desktop/COMP476/ParentChildServer/src/parentchildserver/ParentClient.java</file>
-            <file>file:/Users/jamesostmann/Desktop/COMP476/ParentChildServer/src/parentchildserver/GpaGenerator.java</file>
-            <file>file:/Users/jamesostmann/Desktop/COMP476/ParentChildServer/src/parentchildserver/ParentServer.java</file>
+            <file>file:/Users/jamesostmann/Desktop/COMP476/COMP476-GPA-Parent-Child/ParentChildServer/src/parentchildserver/ParentClient.java</file>
+            <file>file:/Users/jamesostmann/Desktop/COMP476/COMP476-GPA-Parent-Child/ParentChildServer/src/parentchildserver/ParentServer.java</file>
         </group>
     </open-files>
 </project-private>
